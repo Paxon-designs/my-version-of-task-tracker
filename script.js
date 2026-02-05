@@ -1,24 +1,8 @@
-document.addEventListener("DOMContentLoaded", renderTasks);
-
-const cursor = document.querySelector("#idk");
-const container = document.querySelector("#container");
-const trailLayer = document.querySelector("#trail-layer");
-
-const ul = document.querySelector("ul");
-const btn = document.querySelector("#btn");
-const input = document.querySelector("#taskInput");
-
-function getTasks() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-}
-
-function saveTasks(tasks) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-}
-
+// --- Configuration & State ---
+const STORAGE_KEY = "todo_tasks";
 
 const TRAIL_CONFIG = {
-  spawnDistance: 100,
+  spawnDistance: 120,
   size: 96,
   rotationRange: 45,
   maxPerImage: 2
@@ -29,34 +13,58 @@ const CURSOR_PHYSICS = {
   damping: 0.8
 };
 
-function randomBetween(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function distance(x1, y1, x2, y2) {
-  return Math.hypot(x2 - x1, y2 - y1);
-}
-
 const trailImages = [
-  "assets/trails/TD1.png",
-  "assets/trails/TD2.png",
-  "assets/trails/TD3.png",
-  "assets/trails/TD4.png",
-  "assets/trails/TD5.png",
-  "assets/trails/TD6.png",
-  "assets/trails/TD7.png",
-  "assets/trails/TD8.png",
-  "assets/trails/TD9.png",
-  "assets/trails/TD10.png",
-  "assets/trails/TD11.png"
+  "assets/trails/TD1.png", "assets/trails/TD2.png", "assets/trails/TD3.png",
+  "assets/trails/TD4.png", "assets/trails/TD5.png", "assets/trails/TD6.png",
+  "assets/trails/TD7.png", "assets/trails/TD8.png", "assets/trails/TD9.png",
+  "assets/trails/TD10.png", "assets/trails/TD11.png"
 ];
 
 let trailIndex = 0;
-let lastSpawnX = 0;
-let lastSpawnY = 0;
+let lastSpawnX = 0, lastSpawnY = 0;
+let mouseX = 0, mouseY = 0;
+let cx = 0, cy = 0;
+let vx = 0, vy = 0;
 
-// key: image path → value: [img, img]
 const activeTrailImages = new Map();
+
+// --- DOM Elements ---
+const cursor = document.querySelector("#idk");
+const container = document.querySelector("#container");
+const trailLayer = document.querySelector("#trail-layer");
+const ul = document.querySelector("ul");
+const btn = document.querySelector("#btn");
+const input = document.querySelector("#taskInput");
+const clearBtn = document.querySelector("#clearBtn");
+
+// --- Task Logic ---
+const getTasks = () => JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+const saveTasks = (tasks) => localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+
+function renderTasks() {
+  ul.innerHTML = "";
+  const tasks = getTasks();
+
+  tasks.forEach((task) => {
+    const li = document.createElement("li");
+    if (task.completed) li.classList.add("strike-through");
+
+    const text = document.createElement("span");
+    text.textContent = task.text;
+    text.classList.add("task-text");
+
+    const del = document.createElement("span");
+    del.textContent = "✕";
+    del.classList.add("delete");
+
+    li.append(text, del);
+    ul.appendChild(li);
+  });
+}
+
+// --- Trail & Cursor Logic ---
+const randomBetween = (min, max) => Math.random() * (max - min) + min;
+const distance = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
 
 function getNextTrailImage() {
   const src = trailImages[trailIndex];
@@ -66,25 +74,20 @@ function getNextTrailImage() {
 
 function spawnTrailImage(x, y) {
   const src = getNextTrailImage();
-
   const img = document.createElement("img");
-  img.src = src;
-  img.style.position = "fixed";
-  img.style.width = `${TRAIL_CONFIG.size}px`;
-  img.style.left = `${x}px`;
-  img.style.top = `${y}px`;
-  img.style.transform =
-    `translate(-50%, -50%) rotate(${randomBetween(
-      -TRAIL_CONFIG.rotationRange,
-      TRAIL_CONFIG.rotationRange
-    )}deg)`;
 
+  Object.assign(img.style, {
+    position: "fixed",
+    width: `${TRAIL_CONFIG.size}px`,
+    left: `${x}px`,
+    top: `${y}px`,
+    transform: `translate(-50%, -50%) rotate(${randomBetween(-TRAIL_CONFIG.rotationRange, TRAIL_CONFIG.rotationRange)}deg)`
+  });
+  
+  img.src = src;
   trailLayer.appendChild(img);
 
-  if (!activeTrailImages.has(src)) {
-    activeTrailImages.set(src, []);
-  }
-
+  if (!activeTrailImages.has(src)) activeTrailImages.set(src, []);
   const instances = activeTrailImages.get(src);
   instances.push(img);
 
@@ -93,9 +96,21 @@ function spawnTrailImage(x, y) {
   }
 }
 
-let mouseX = 0, mouseY = 0;
-let cx = 0, cy = 0;
-let vx = 0, vy = 0;
+function animateCursor() {
+  vx += (mouseX - cx) * CURSOR_PHYSICS.stiffness;
+  vy += (mouseY - cy) * CURSOR_PHYSICS.stiffness;
+  vx *= CURSOR_PHYSICS.damping;
+  vy *= CURSOR_PHYSICS.damping;
+  cx += vx;
+  cy += vy;
+
+  cursor.style.left = `${cx}px`;
+  cursor.style.top = `${cy}px`;
+  requestAnimationFrame(animateCursor);
+}
+
+// --- Event Listeners ---
+document.addEventListener("DOMContentLoaded", renderTasks);
 
 window.addEventListener("mousemove", (e) => {
   mouseX = e.clientX;
@@ -108,114 +123,51 @@ window.addEventListener("mousemove", (e) => {
   }
 });
 
-function animateCursor() {
-  const dx = mouseX - cx;
-  const dy = mouseY - cy;
-
-  vx += dx * CURSOR_PHYSICS.stiffness;
-  vy += dy * CURSOR_PHYSICS.stiffness;
-
-  vx *= CURSOR_PHYSICS.damping;
-  vy *= CURSOR_PHYSICS.damping;
-
-  cx += vx;
-  cy += vy;
-
-  cursor.style.left = cx + "px";
-  cursor.style.top = cy + "px";
-
-  requestAnimationFrame(animateCursor);
-}
-
 animateCursor();
 
-container.addEventListener("mouseenter", () => {
-  cursor.style.mixBlendMode = "difference";
-});
+container.addEventListener("mouseenter", () => cursor.style.mixBlendMode = "difference");
+container.addEventListener("mouseleave", () => cursor.style.mixBlendMode = "normal");
 
-container.addEventListener("mouseleave", () => {
-  cursor.style.mixBlendMode = "normal";
-});
-
+// Consolidated UL Click Listener (Handles Delete AND Toggle)
 ul.addEventListener("click", (e) => {
-  if (!e.target.classList.contains("delete")) return;
-
-  const taskText = e.target.previousSibling.textContent;
-  let tasks = getTasks();
-
-  
-  tasks = tasks.filter(task => task !== taskText);
-  saveTasks(tasks);
-
-  renderTasks();
-});
-
-ul.addEventListener("click", (e) => {
-  if (e.target.classList.contains("delete")) return;
-
   const li = e.target.closest("li");
   if (!li) return;
+  
+  const index = [...ul.children].indexOf(li);
+  const tasks = getTasks();
 
-  li.classList.toggle("strike-through");
+  if (e.target.classList.contains("delete")) {
+    tasks.splice(index, 1);
+    saveTasks(tasks);
+    renderTasks();
+  } else {
+    tasks[index].completed = !tasks[index].completed;
+    saveTasks(tasks);
+    li.classList.toggle("strike-through");
+  }
 });
 
-
-
 btn.addEventListener("click", () => {
-  btn.classList.toggle("active");
-  input.style.display = btn.classList.contains("active") ? "initial" : "none";
-  if (btn.classList.contains("active")) input.focus();
+  const isActive = btn.classList.toggle("active");
+  input.style.display = isActive ? "initial" : "none";
+  if (isActive) input.focus();
   else input.value = "";
 });
 
 input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && input.value.trim()) {
+  const val = input.value.trim();
+  if (e.key === "Enter" && val) {
     const tasks = getTasks();
-    tasks.push(input.value.trim());
+    tasks.push({ text: val, completed: false });
     saveTasks(tasks);
-
     input.value = "";
-    input.style.display = "none";
-    btn.classList.remove("active");
-
     renderTasks();
   }
 });
 
-const STORAGE_KEY = "todo_tasks";
-
-function renderTasks() {
-  ul.innerHTML = "";
-
-  const tasks = getTasks();
-
-  tasks.forEach(task => {
-    const li = document.createElement("li");
-
-    const text = document.createElement("span");
-    text.textContent = task;
-    text.classList.add("task-text");
-
-    const del = document.createElement("span");
-    del.textContent = "✕";
-    del.classList.add("delete");
-
-    li.append(text, del);
-    ul.appendChild(li);
-  });
-}
-
-const clearBtn = document.querySelector("#clearBtn");
-
-clearBtn.addEventListener("click", () => {
-  localStorage.removeItem(STORAGE_KEY);
-  renderTasks();
-});
-
+// Consolidated Clear Button Listener
 clearBtn.addEventListener("click", () => {
   clearBtn.classList.toggle("rotate");
-
-  // clear storage + UI
-  localStorage.removeItem("todo_tasks");
+  localStorage.removeItem(STORAGE_KEY);
   renderTasks();
 });
