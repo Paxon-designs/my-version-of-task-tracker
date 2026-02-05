@@ -155,13 +155,21 @@ btn.addEventListener("click", () => {
 });
 
 input.addEventListener("keydown", (e) => {
-  const val = input.value.trim();
-  if (e.key === "Enter" && val) {
+  if (e.key === "Enter" && input.value.trim()) {
     const tasks = getTasks();
-    tasks.push({ text: val, completed: false });
+
+    tasks.push({
+      text: input.value.trim(),
+      completed: false
+    });
+
     saveTasks(tasks);
-    input.value = "";
     renderTasks();
+
+    // Reset UI State
+    input.value = "";
+    input.style.display = "none";
+    btn.classList.remove("active");
   }
 });
 
