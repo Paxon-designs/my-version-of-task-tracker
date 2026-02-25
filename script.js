@@ -2,14 +2,14 @@
 const STORAGE_KEY = "todo_tasks";
 
 const TRAIL_CONFIG = {
-  spawnDistance: 120,
+  spawnDistance: 68,
   size: 96,
   rotationRange: 45,
   maxPerImage: 2
 };
 
 const CURSOR_PHYSICS = {
-  stiffness: 0.08,
+  stiffness: 0.009  ,
   damping: 0.8
 };
 
@@ -20,7 +20,7 @@ const trailImages = [
   "assets/trails/TD10.png", "assets/trails/TD11.png"
 ];
 
-let trailIndex = 0;
+let shuffledTrail = [];;
 let lastSpawnX = 0, lastSpawnY = 0;
 let mouseX = 0, mouseY = 0;
 let cx = 0, cy = 0;
@@ -67,33 +67,55 @@ const randomBetween = (min, max) => Math.random() * (max - min) + min;
 const distance = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
 
 function getNextTrailImage() {
-  const src = trailImages[trailIndex];
-  trailIndex = (trailIndex + 1) % trailImages.length;
-  return src;
+  // refill and shuffle when empty
+  if (shuffledTrail.length === 0) {
+    shuffledTrail = [...trailImages].sort(() => Math.random() - 0.5);
+  }
+
+  return shuffledTrail.pop();
 }
 
 function spawnTrailImage(x, y) {
   const src = getNextTrailImage();
   const img = document.createElement("img");
 
+  img.classList.add("trail-img");
+
+  const baseRotation = randomBetween(
+    -TRAIL_CONFIG.rotationRange,
+    TRAIL_CONFIG.rotationRange
+  );
+
   Object.assign(img.style, {
-    position: "fixed",
     width: `${TRAIL_CONFIG.size}px`,
     left: `${x}px`,
     top: `${y}px`,
-    transform: `translate(-50%, -50%) rotate(${randomBetween(-TRAIL_CONFIG.rotationRange, TRAIL_CONFIG.rotationRange)}deg)`
+    transform: `translate(-50%, -50%) scale(0.6) rotate(${baseRotation}deg)`
   });
-  
+
   img.src = src;
   trailLayer.appendChild(img);
 
-  if (!activeTrailImages.has(src)) activeTrailImages.set(src, []);
-  const instances = activeTrailImages.get(src);
-  instances.push(img);
+  // 🔥 POP OUT (next frame so browser registers start state)
+  requestAnimationFrame(() => {
+    img.style.transition =
+      "transform 250ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease-out";
+    img.style.opacity = "1";
+    img.style.transform = `translate(-50%, -50%) scale(1.15) rotate(${baseRotation}deg)`;
+  });
 
-  if (instances.length > TRAIL_CONFIG.maxPerImage) {
-    instances.shift().remove();
-  }
+  // 🔻 SHRINK + FADE OUT
+  setTimeout(() => {
+    img.style.transition =
+      "transform 600ms cubic-bezier(.4,0,.2,1), opacity 600ms ease-in";
+    img.style.opacity = "0";
+    img.style.transform = `translate(-50%, -50%) scale(0.5) rotate(${baseRotation}deg)`;
+  }, 250);
+
+  // 💀 remove
+  setTimeout(() => {
+    img.remove();
+  }, 900);
 }
 
 function animateCursor() {
@@ -126,8 +148,13 @@ window.addEventListener("mousemove", (e) => {
 
 animateCursor();
 
-container.addEventListener("mouseenter", () => cursor.style.mixBlendMode = "difference");
-container.addEventListener("mouseleave", () => cursor.style.mixBlendMode = "normal");
+container.addEventListener("mouseenter", () =>
+  cursor.classList.add("invert")
+);
+
+container.addEventListener("mouseleave", () =>
+  cursor.classList.remove("invert")
+);
 
 // Consolidated UL Click Listener (Handles Delete AND Toggle)
 ul.addEventListener("click", (e) => {
@@ -185,7 +212,6 @@ input.addEventListener("keydown", (e) => {
     });
 
     saveTasks(tasks);
-    renderTasks();
     renderTasks();
     
     // Reset UI State
