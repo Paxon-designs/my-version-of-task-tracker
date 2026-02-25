@@ -33,7 +33,7 @@ body{
   padding: 30px;
 }
 
-/* Make sure your main container stays above */
+
 #container {
   position: relative;
   z-index: 2;
@@ -80,21 +80,27 @@ body{
   pointer-events: none;
   z-index: 1;
 }
+
+.trail-img {
+  position: fixed;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6);
+  will-change: transform, opacity;
+}
+
 #idk {
   position: fixed;
-  width: 32px;
-  height: 32px; 
-  background: rgb(201, 138, 89);
+  width: 10px;              
+  height: 10px;
+  border-radius: 50%;
+  background: #d19328;       
   pointer-events: none;
   z-index: 9999;
-
   transform: translate(-50%, -50%);
-  transition: background 0.2s ease;
+  mix-blend-mode: difference;  
 }
 
-#idk.invert{
-  mix-blend-mode: difference;
-}
 
 
 #btn {
@@ -166,8 +172,8 @@ ul{
   font-family: "gilroy";
   font-weight: bolder;
   max-height: 350px;
-  overflow: hidden;                  /* take remaining space */
-  overflow-y: auto;         /* vertical scroll */
+  overflow: hidden;                  
+  overflow-y: auto;     
   list-style: none;
   scrollbar-width: none;
 }
@@ -184,7 +190,7 @@ li{
   opacity: 0;
   cursor: pointer;
   margin-left: 10px;
-  color: red;
+  color: rgb(0, 0, 0);
   transition: opacity 0.2s;
 }
 
