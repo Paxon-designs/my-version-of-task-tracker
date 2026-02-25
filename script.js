@@ -123,6 +123,7 @@ window.addEventListener("mousemove", (e) => {
   }
 });
 
+
 animateCursor();
 
 container.addEventListener("mouseenter", () => cursor.style.mixBlendMode = "difference");
@@ -147,13 +148,33 @@ ul.addEventListener("click", (e) => {
   }
 });
 
-btn.addEventListener("click", () => {
+
+
+btn.addEventListener("click", (e) => {
+  e.stopPropagation(); // VERY important
+
   const isActive = btn.classList.toggle("active");
+
   input.style.display = isActive ? "initial" : "none";
-  if (isActive) input.focus();
-  else input.value = "";
+
+  if (isActive) {
+    input.focus();
+  } else {
+    input.value = "";
+  }
 });
 
+container.addEventListener("click", (e) => {
+  const clickedBtn = btn.contains(e.target);
+  const clickedInput = input.contains(e.target);
+
+  if (!clickedBtn && !clickedInput) {
+    btn.classList.remove("active");
+    input.style.display = "none";
+    input.value = "";
+  }
+});
+ 
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim()) {
     const tasks = getTasks();
@@ -165,12 +186,26 @@ input.addEventListener("keydown", (e) => {
 
     saveTasks(tasks);
     renderTasks();
-
+    renderTasks();
+    
     // Reset UI State
     input.value = "";
-    input.style.display = "none";
-    btn.classList.remove("active");
+    input.focus(); 
   }
+});
+
+document.addEventListener("click", (e) => {
+  const clickedInsideContainer = container.contains(e.target);
+
+  if (!clickedInsideContainer) {
+    btn.classList.remove("active");
+    input.style.display = "none";
+    input.value = "";
+  }
+});
+
+input.addEventListener("click", (e) => {
+  e.stopPropagation();
 });
 
 // Consolidated Clear Button Listener
