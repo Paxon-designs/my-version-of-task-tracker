@@ -1,17 +1,19 @@
-*{
-  margin: 1px;
-  padding: 0px;
-  font-family: "gilroy";
+/* ================= BASE RESET ================= */
+* {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
+  font-family: "gilroy";
 }
 
 html,
-body{
+body {
   width: 100%;
   height: 100%;
 }
 
-body{
+/* ================= BODY ================= */
+body {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,33 +21,34 @@ body{
   overflow: hidden;
 }
 
-
-#container{
-  display: flex;
-  align-items: stretch;
-  flex-direction: column;
-  width: 400px;
-  height: 400px;
-  background-color: #fff;
-  border-radius: 10px;
-  border: #000 solid 1px;
-  overflow: hidden;
-  padding: 30px;
-}
-
-
+/* ================= MAIN CONTAINER ================= */
 #container {
   position: relative;
   z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  width: 400px;
+  height: 400px;
+  padding: 30px;
+
+  background-color: #fff;
+  border: 1px solid #000;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
+/* ================= CLEAR BUTTON ================= */
 #clearBtn {
   position: absolute;
-  margin-top: 10px;
+  top: 10px;
   right: 30px;
-  
+
   width: 20px;
   height: 20px;
+
   background: #000;
   border: none;
   border-radius: 50%;
@@ -55,25 +58,53 @@ body{
   justify-content: center;
 
   transition: transform 0.6s ease;
-  
-}
-
-#clearBtn svg {
-  width: 100%;
-  height: 100%;
-  margin: 0px;
-  padding: 0;
-  stroke: #fff;
-  stroke-width: 1.4;
-  
 }
 
 #clearBtn.rotate {
   transform: rotate(180deg);
 }
 
+#clearBtn svg {
+  width: 100%;
+  height: 100%;
+  stroke: #fff;
+  stroke-width: 1.4;
+  pointer-events: none;
+}
 
-/* Trail layer (background playground) */
+/* ================= CURSOR HINT ================= */
+#cursorHint {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+
+  opacity: 0;
+  transform: translate(16px, -50%) scale(0.96);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#cursorHint.visible {
+  opacity: 1;
+  transform: translate(16px, -50%) scale(1);
+}
+
+.hint-text {
+  display: inline-block;
+  white-space: nowrap;
+
+  background: #626161;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+
+  padding: 6px 8px;
+  border-radius: 6px;
+
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/* ================= TRAIL LAYER ================= */
 #trail-layer {
   position: fixed;
   inset: 0;
@@ -85,51 +116,45 @@ body{
   position: fixed;
   pointer-events: none;
   opacity: 0;
+
   transform: translate(-50%, -50%) scale(0.6);
   will-change: transform, opacity;
 }
 
+/* ================= CUSTOM CURSOR ================= */
 #idk {
   position: fixed;
-  width: 10px;              
+  z-index: 9999;
+  pointer-events: none;
+
+  width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #d19328;       
-  pointer-events: none;
-  z-index: 9999;
+
+  background: #284dd1;
   transform: translate(-50%, -50%);
-  mix-blend-mode: difference;  
+  mix-blend-mode: difference;
 }
 
-
-
+/* ================= ADD BUTTON ================= */
 #btn {
   width: 20px;
   height: 20px;
-  background: #000;
-  border: none;
   margin-top: 10px;
 
-  transition: 
-    transform 0.7s ease,
-    border-radius 0.7s ease;
+  background: #000;
+  border: none;
+  border-radius: 50%;
 
   transform: rotate(0deg);
-  border-radius: 50%;
-  
+  transition: transform 0.7s ease, border-radius 0.7s ease;
 }
 
-#btn svg{
+#btn svg {
   width: 100%;
   height: 100%;
-  margin: 0px;
-  padding: 0;
-  stroke-width: 1.4;
   stroke: #fff;
-}
-
-#btn svg,
-#clearBtn svg {
+  stroke-width: 1.4;
   pointer-events: none;
 }
 
@@ -138,7 +163,10 @@ body{
   transition: opacity 0.3s ease;
 }
 
-/* active state */
+#btn.active {
+  transform: rotate(360deg);
+}
+
 #btn.active .horiz {
   opacity: 0;
 }
@@ -147,51 +175,50 @@ body{
   opacity: 1;
 }
 
-#btn.active {
-  transform: rotate(360deg);
-  border-radius: 50%;
+/* ================= TASK LIST ================= */
+ul {
+  user-select: none;
+  list-style: none;
+
+  margin: 0;
+  padding: 0;
+
+  font-size: medium;
+  font-weight: bolder;
+
+  max-height: 350px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 li.strike-through .task-text {
   text-decoration: line-through;
 }
 
-#taskInput{
+/* ================= INPUT ================= */
+#taskInput {
   display: none;
   border: none;
   outline: none;
-  
 }
 
-ul{
-  user-select: none;
-  list-style-type: none;
-  padding: 0px;
-  margin: 0px;
-  font-size:medium;
-  font-family: "gilroy";
-  font-weight: bolder;
-  max-height: 350px;
-  overflow: hidden;                  
-  overflow-y: auto;     
-  list-style: none;
-  scrollbar-width: none;
-}
-
-li{
-  word-break: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
+/* ================= DELETE BUTTON ================= */
 .delete {
-  opacity: 0;
-  cursor: pointer;
   margin-left: 10px;
-  color: rgb(0, 0, 0);
-  transition: opacity 0.2s;
+  cursor: pointer;
+  color: #000;
+
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 li:hover .delete {
