@@ -1,48 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task tracker</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="./favicon.png">  
-    
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="favicon.png" />
 </head>
+
 <body>
-    <script src="script.js" defer></script>
-    <div id="idk"></div>
-    <div id="trail-layer"></div>
-    <div id="container">
-    <button id="clearBtn" aria-label="Clear tasks">
-    <svg viewBox="0 0 24 24">
-    <line x1="6" y1="6" x2="18" y2="18" />
-    <line x1="18" y1="6" x2="6" y2="18" />
-    </svg>
+  <div id="idk"></div>
 
+  <div id="cursorHint">
+    <span class="hint-text"></span>
+  </div>
+
+  <div id="trail-layer"></div>
+
+  <div id="container">
+    <button id="clearBtn" type="button" aria-label="Clear tasks">
+      <svg viewBox="0 0 24 24">
+        <line x1="6" y1="6" x2="18" y2="18" />
+        <line x1="18" y1="6" x2="6" y2="18" />
+      </svg>
     </button>
 
-    <ul id="list">
-    </ul>
-    <input id="taskInput">
-    <button id="btn">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-    <!-- shaft -->
-    <line class="vert" x1="12" y1="6" x2="12" y2="20" />
+    <ul id="list" aria-live="polite"></ul>
 
-    <!-- plus horizontal -->
-    <line class="horiz" x1="4" y1="12" x2="20" y2="12" />
+    <input
+      id="taskInput"
+      type="text"
+      autocomplete="off"
+    />
 
-    <!-- arrow head -->
-    <polyline class="arrow-head" points="6 10 12 4 18 10" />
-    </svg>
+    <button id="btn" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line class="vert" x1="12" y1="6" x2="12" y2="20" />
+        <line class="horiz" x1="4" y1="12" x2="20" y2="12" />
+        <polyline class="arrow-head" points="6 10 12 4 18 10" />
+      </svg>
     </button>
-    </div>
+  </div>
 
+  <script src="script.js"></script>
 </body>
 </html>
-<!--
-task lene,
-phir js se update krnaa unka text content
-unpe line create krni hai, yani toggle for completion and not
--->
-
