@@ -1,6 +1,6 @@
 /* ================= BASE RESET ================= */
 * {
-  margin: 0;
+  margin: 1;
   padding: 0;
   box-sizing: border-box;
   font-family: "gilroy";
@@ -43,7 +43,7 @@ body {
 /* ================= CLEAR BUTTON ================= */
 #clearBtn {
   position: absolute;
-  top: 10px;
+  margin-top: 10px;
   right: 30px;
 
   width: 20px;
@@ -98,7 +98,6 @@ body {
   font-weight: 600;
 
   padding: 6px 8px;
-  border-radius: 6px;
 
   transform-origin: left center;
   will-change: transform;
