@@ -1,5 +1,12 @@
 // ================= CONFIG =================
 const STORAGE_KEY = "todo_tasks";
+let hasUserInteractedWithAdd = false;
+
+const HINT_CONFIG = {
+  baseOffsetX: 16,
+  maxOffsetY: 10,
+  smooth: 0.15
+};
 
 const TRAIL_CONFIG = {
   spawnDistance: 68,
@@ -22,8 +29,10 @@ const trailImages = [
 // ================= DOM =================
 const cursor = document.querySelector("#idk");
 const container = document.querySelector("#container");
+const cursorHint = document.querySelector("#cursorHint");
+const hintText = cursorHint?.querySelector(".hint-text");
 const trailLayer = document.querySelector("#trail-layer");
-const ul = document.querySelector("ul");
+const ul = document.querySelector("#list");
 const btn = document.querySelector("#btn");
 const input = document.querySelector("#taskInput");
 const clearBtn = document.querySelector("#clearBtn");
@@ -78,10 +87,13 @@ class CursorController {
 
     this.mouseX = 0;
     this.mouseY = 0;
+
     this.cx = 0;
     this.cy = 0;
     this.vx = 0;
     this.vy = 0;
+
+    this.hintOffsetY = 0;
 
     this.animate = this.animate.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -95,17 +107,60 @@ class CursorController {
     this.mouseY = e.clientY;
   }
 
-  animate() {
+  // ---------- physics ----------
+  updatePhysics() {
     this.vx += (this.mouseX - this.cx) * this.physics.stiffness;
     this.vy += (this.mouseY - this.cy) * this.physics.stiffness;
+
     this.vx *= this.physics.damping;
     this.vy *= this.physics.damping;
 
     this.cx += this.vx;
     this.cy += this.vy;
+  }
 
+  // ---------- cursor ----------
+  updateCursorPosition() {
     this.cursor.style.left = `${this.cx}px`;
     this.cursor.style.top = `${this.cy}px`;
+  }
+
+  // ---------- hint anchor ----------
+  updateHintAnchor() {
+    if (!cursorHint) return;
+
+    cursorHint.style.left = `${this.cx + HINT_CONFIG.baseOffsetX}px`;
+    cursorHint.style.top = `${this.cy}px`;
+  }
+
+  // ---------- hint motion (hinge effect) ----------
+  updateHintMotion() {
+    if (!hintText) return;
+
+    const target =
+      Math.max(
+        -HINT_CONFIG.maxOffsetY,
+        Math.min(HINT_CONFIG.maxOffsetY, this.vy * 6)
+      );
+
+    this.hintOffsetY +=
+      (target - this.hintOffsetY) * HINT_CONFIG.smooth;
+
+    // micro snap when nearly still
+    if (Math.abs(this.vy) < 0.01 && Math.abs(this.hintOffsetY) < 0.1) {
+      this.hintOffsetY = 0;
+    }
+
+    const angle = -this.hintOffsetY * 0.8;
+    hintText.style.transform = `rotate(${angle}deg)`;
+  }
+
+  // ---------- main loop ----------
+  animate() {
+    this.updatePhysics();
+    this.updateCursorPosition();
+    this.updateHintAnchor();
+    this.updateHintMotion();
 
     requestAnimationFrame(this.animate);
   }
@@ -134,9 +189,7 @@ class TrailController {
   }
 
   handleMove(x, y) {
-    const dx = x - this.lastX;
-    const dy = y - this.lastY;
-    const dist = Math.hypot(dx, dy);
+    const dist = Math.hypot(x - this.lastX, y - this.lastY);
 
     if (dist > this.config.spawnDistance) {
       this.spawn(x, y);
@@ -164,24 +217,51 @@ class TrailController {
 
     this.layer.appendChild(img);
 
-    // POP IN
     requestAnimationFrame(() => {
       img.style.transition =
         "transform 250ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease-out";
       img.style.opacity = "1";
-      img.style.transform = `translate(-50%, -50%) scale(1.15) rotate(${rotation}deg)`;
+      img.style.transform =
+        `translate(-50%, -50%) scale(1.15) rotate(${rotation}deg)`;
     });
 
-    // SHRINK OUT
     setTimeout(() => {
       img.style.transition =
         "transform 600ms cubic-bezier(.4,0,.2,1), opacity 600ms ease-in";
       img.style.opacity = "0";
-      img.style.transform = `translate(-50%, -50%) scale(0.5) rotate(${rotation}deg)`;
+      img.style.transform =
+        `translate(-50%, -50%) scale(0.5) rotate(${rotation}deg)`;
     }, 250);
 
-    // REMOVE
     setTimeout(() => img.remove(), 900);
+  }
+}
+
+// ================= HINT VISIBILITY =================
+let hintTimeout;
+
+function updateCursorHintVisibility(isInsideContainer) {
+  const hasTasks = StorageService.getTasks().length > 0;
+
+  if (!cursorHint || !hintText) return;
+
+  if (hasTasks) {
+    cursorHint.classList.remove("visible");
+    return;
+  }
+
+  clearTimeout(hintTimeout);
+
+  if (isInsideContainer) {
+    hintText.textContent = hasUserInteractedWithAdd
+      ? "Type your task"
+      : "Click + to add";
+
+    hintTimeout = setTimeout(() => {
+      cursorHint.classList.add("visible");
+    }, 120);
+  } else {
+    cursorHint.classList.remove("visible");
   }
 }
 
@@ -189,23 +269,21 @@ class TrailController {
 document.addEventListener("DOMContentLoaded", () => {
   TaskUI.render(ul);
 
-  // controllers
   new CursorController(cursor, CURSOR_PHYSICS);
   new TrailController(trailLayer, TRAIL_CONFIG, trailImages);
 });
 
 // ================= UI INTERACTIONS =================
+container.addEventListener("mouseenter", () => {
+  cursor.classList.add("invert");
+  updateCursorHintVisibility(true);
+});
 
-// blend mode toggle
-container.addEventListener("mouseenter", () =>
-  cursor.classList.add("invert")
-);
+container.addEventListener("mouseleave", () => {
+  cursor.classList.remove("invert");
+  updateCursorHintVisibility(false);
+});
 
-container.addEventListener("mouseleave", () =>
-  cursor.classList.remove("invert")
-);
-
-// list interactions
 ul.addEventListener("click", (e) => {
   const li = e.target.closest("li");
   if (!li) return;
@@ -224,9 +302,11 @@ ul.addEventListener("click", (e) => {
   }
 });
 
-// add button
 btn.addEventListener("click", (e) => {
   e.stopPropagation();
+
+  hasUserInteractedWithAdd = true;
+  updateCursorHintVisibility(true);
 
   const isActive = btn.classList.toggle("active");
   input.style.display = isActive ? "initial" : "none";
@@ -235,7 +315,6 @@ btn.addEventListener("click", (e) => {
   else input.value = "";
 });
 
-// container click collapse
 container.addEventListener("click", (e) => {
   const clickedBtn = btn.contains(e.target);
   const clickedInput = input.contains(e.target);
@@ -247,7 +326,6 @@ container.addEventListener("click", (e) => {
   }
 });
 
-// enter to add
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && input.value.trim()) {
     const tasks = StorageService.getTasks();
@@ -260,12 +338,15 @@ input.addEventListener("keydown", (e) => {
     StorageService.saveTasks(tasks);
     TaskUI.render(ul);
 
+    hasUserInteractedWithAdd = true;
+    cursorHint?.classList.remove("visible");
+    updateCursorHintVisibility(true);
+
     input.value = "";
     input.focus();
   }
 });
 
-// outside click collapse
 document.addEventListener("click", (e) => {
   if (!container.contains(e.target)) {
     btn.classList.remove("active");
@@ -274,12 +355,11 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// prevent bubbling
 input.addEventListener("click", (e) => e.stopPropagation());
 
-// clear all
 clearBtn.addEventListener("click", () => {
   clearBtn.classList.toggle("rotate");
   StorageService.clear();
   TaskUI.render(ul);
+  updateCursorHintVisibility(container.matches(":hover"));
 });
